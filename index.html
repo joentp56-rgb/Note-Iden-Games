@@ -51,6 +51,16 @@ button{cursor:pointer}
 main{flex:1;min-height:0;display:flex;flex-direction:column;padding:0 14px 14px}
 .screen{flex:1;min-height:0;overflow:auto}
 
+
+/* =====================================================
+   หน้าต้อนรับและเครดิตผู้พัฒนา
+   ===================================================== */
+.intro-screen{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:24px;background:var(--cream);background-image:radial-gradient(circle at 15% 20%,rgba(255,210,63,.55) 0 100px,transparent 101px),radial-gradient(circle at 88% 82%,rgba(47,196,178,.38) 0 135px,transparent 136px),radial-gradient(circle at 82% 12%,rgba(255,107,107,.28) 0 75px,transparent 76px)}
+.intro-card{width:min(100%,560px);padding:clamp(28px,6vw,54px);text-align:center;background:#fff;border:4px solid var(--ink);border-radius:30px;box-shadow:9px 9px 0 var(--ink);}
+.intro-note{display:grid;place-items:center;width:76px;height:76px;margin:0 auto 18px;border:4px solid var(--ink);border-radius:24px;background:var(--yellow);font-size:2.8rem;font-weight:900;box-shadow:4px 4px 0 var(--ink)}
+.intro-credit{margin:8px 0 28px;font-size:clamp(1.15rem,4vw,1.65rem);font-weight:900;letter-spacing:.01em}
+.intro-title{margin:0;font-size:clamp(1.7rem,6vw,2.5rem);font-weight:1000}
+
 /* =====================================================
    ปุ่ม
    ===================================================== */
@@ -186,6 +196,16 @@ select{width:100%;min-height:48px;padding:8px 12px;border:3px solid var(--ink);b
 .note-btn[data-letter="4"]{background:#74d9e8}
 .note-btn[data-letter="5"]{background:#92b4ff}
 .note-btn[data-letter="6"]{background:#c4a8ff}
+/* Piano-key answer pad */
+.pad:not(.piano){display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}
+.pad.piano{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:3px;align-items:stretch}
+.pad.piano .note-btn{min-width:0;min-height:76px;flex:auto;border-radius:8px 8px 12px 12px;padding:4px 1px;background:#fff;border-width:2px;box-shadow:2px 2px 0 var(--ink)}
+.pad.piano .note-btn.black-key{background:#25283d;color:#fff;min-height:58px;border-color:#111;box-shadow:2px 2px 0 #111}
+.pad.piano .note-btn .nb-main{font-size:clamp(.72rem,2vw,1rem)}
+.pad.piano .note-btn .nb-sub{font-size:.68rem}
+.clef-checks{display:flex;flex-wrap:wrap;gap:8px}
+.clef-checks .chip span{min-height:46px}
+@media (orientation:landscape) and (max-height:520px){.pad.piano .note-btn{min-height:54px}.pad.piano .note-btn.black-key{min-height:42px}}
 @media (min-width:760px){ .note-btn{flex:1 1 0} }
 @media (orientation:landscape) and (max-height:520px){
   .game{grid-template-columns:minmax(0,1fr) 250px;grid-template-rows:auto minmax(0,1fr)}
@@ -243,8 +263,18 @@ select{width:100%;min-height:48px;padding:8px 12px;border:3px solid var(--ink);b
   </header>
 
   <main>
+    <!-- ================= หน้าต้อนรับ ================= -->
+    <section id="intro" class="intro-screen" aria-label="Developer credit">
+      <div class="intro-card">
+        <div class="intro-note" aria-hidden="true">♪</div>
+        <h1 class="intro-title">โน้ตตก</h1>
+        <p class="intro-credit">Develop By ณัฐวุฒิ ตั้งประเสริฐ</p>
+        <button type="button" class="btn big" id="enterBtn">เข้าสู่เกม / Enter</button>
+      </div>
+    </section>
+
     <!-- ================= หน้าเริ่มเกม ================= -->
-    <section id="menu" class="screen menu">
+    <section id="menu" class="screen menu" hidden>
       <div class="panel">
         <h1 data-i18n="title"></h1>
         <p data-i18n="tagline"></p>
@@ -259,7 +289,8 @@ select{width:100%;min-height:48px;padding:8px 12px;border:3px solid var(--ink);b
         <h2 data-i18n="settingsTitle"></h2>
         <div class="settings-grid">
           <fieldset><legend data-i18n="difficulty"></legend><div class="segs" id="difficultySegs"></div></fieldset>
-          <fieldset><legend data-i18n="clef"></legend><div class="segs" id="clefSegs"></div></fieldset>
+          <fieldset><legend data-i18n="clef"></legend><div class="clef-checks" id="clefSegs"></div></fieldset>
+          <fieldset><legend data-i18n="answerMode"></legend><div class="segs" id="answerModeSegs"></div></fieldset>
           <div>
             <label for="keySelect" style="font-weight:800;display:block;margin-bottom:6px" data-i18n="key"></label>
             <select id="keySelect"></select>
@@ -350,7 +381,9 @@ const CONFIG = {
   difficulties: {               // fallSeconds = จำนวนวินาทีที่โน้ตใช้ตกจนถึงเส้นเป้าหมาย (น้อย = เร็ว)
     easy:   { fallSeconds: 14 },
     medium: { fallSeconds: 9 },
-    hard:   { fallSeconds: 5.5 }
+    hard:   { fallSeconds: 5.5 },
+    expert: { fallSeconds: 3.8 },
+    master: { fallSeconds: 2.6 }
   },
   scoreBase: 10,                // คะแนนพื้นฐานต่อข้อ
   scoreSpeedBonus: 10,          // โบนัสสูงสุด ยิ่งตอบเร็วยิ่งได้มาก
@@ -366,6 +399,9 @@ const CONFIG = {
 const TH = ['โด','เร','มี','ฟา','ซอล','ลา','ที'];
 const EN = ['C','D','E','F','G','A','B'];
 const ACC_SYM = { '-1':'♭', '0':'', '1':'♯' };
+const NATURAL_PITCH = [0,2,4,5,7,9,11];
+const PITCH_NAMES = ['C','C♯/D♭','D','D♯/E♭','E','F','F♯/G♭','G','G♯/A♭','A','A♯/B♭','B'];
+const PITCH_TH = ['โด','โด♯/เร♭','เร','เร♯/มี♭','มี','ฟา','ฟา♯/ซอล♭','ซอล','ซอล♯/ลา♭','ลา','ลา♯/ที♭','ที'];
 
 // bottomN = เลขลำดับ diatonic ของโน้ตบนเส้นล่างสุด (อ็อกเทฟ*7 + ตัวโน้ต) เช่น E4 = 4*7+2 = 30
 // sharps/flats = ตำแหน่งเครื่องหมายชาร์ป/แฟลตในกุญแจนั้น ๆ ตามธรรมเนียมการเขียนโน้ตสากล
@@ -432,11 +468,11 @@ const I18N = {
     soundOn:'เสียง: เปิด', soundOff:'เสียง: ปิด',
     tagline:'อ่านโน้ตบนบรรทัดห้าเส้น แล้วกดชื่อโน้ตที่ถูกต้องก่อนที่โน้ตจะตกถึงเส้นเป้าหมาย!',
     how1:'บรรทัดห้าเส้นที่มีโน้ตหนึ่งตัวจะตกลงมาจากด้านบน',
-    how2:'กดปุ่มชื่อโน้ตที่ถูกต้อง หรือกดแป้น C D E F G A B / เลข 1–7 บนคีย์บอร์ด (P หรือ Esc = หยุดชั่วคราว)',
+    how2:'ตอบด้วยปุ่มชื่อโน้ตหรือ Piano keys ได้ และใช้คีย์บอร์ด C D E F G A B / เลข 1–7 (P หรือ Esc = หยุดชั่วคราว)',
     how3:() => `ตอบผิดหรือปล่อยให้ตกถึงเส้น = พลาด 1 ครั้ง พลาดครบ ${CONFIG.maxMisses} ครั้งเกมจบ`,
     settingsTitle:'ตั้งค่าการฝึก',
-    difficulty:'ระดับความยาก', easy:'ง่าย', medium:'ปานกลาง', hard:'ยาก',
-    clef:'กุญแจประจำหลัก',
+    difficulty:'ระดับความยาก', easy:'ง่าย', medium:'ปานกลาง', hard:'ยาก', expert:'ผู้เชี่ยวชาญ', master:'ปรมาจารย์',
+    clef:'กุญแจประจำหลัก (เลือกได้หลายกุญแจ)', answerMode:'วิธีตอบ', noteButtons:'ปุ่มชื่อโน้ต', pianoKeys:'Piano keys',
     treble:'กุญแจซอล (Treble)', bass:'กุญแจฟา (Bass)', alto:'กุญแจโด Alto', tenor:'กุญแจโด Tenor',
     key:'คีย์เพลง (Key signature)',
     keyCount:(n) => n === 0 ? 'ไม่มีเครื่องหมาย' : (n > 0 ? `ชาร์ป ${n} ตัว` : `แฟลต ${-n} ตัว`),
@@ -448,10 +484,10 @@ const I18N = {
     poolEmpty:'ไม่มีโน้ตตรงกับเงื่อนไขนี้ — ลองเลือกชื่อโน้ตเพิ่ม หรือเปลี่ยนช่วงเสียง/ตำแหน่งโน้ต',
     previewTitle:'ตัวอย่างบรรทัดห้าเส้นตามที่เลือก',
     limitsTitle:'ข้อจำกัดของเกม',
-    limit1:'รองรับคีย์ที่มีเครื่องหมายชาร์ปหรือแฟลตได้สูงสุด 6 ตัว (ยังไม่รองรับ C♯ และ C♭ เมเจอร์)',
-    limit2:'คีย์ไมเนอร์ใช้เครื่องหมายประจำคีย์เดียวกับเมเจอร์คู่ขนาน และไม่มีเครื่องหมายแปลงเสียงชั่วคราว (♯ ♭ ♮) ข้างตัวโน้ต',
-    limit3:'ปุ่มคำตอบแสดงชื่อโน้ตตามคีย์ที่เลือก เช่น ในคีย์ G เมเจอร์ ตำแหน่ง ฟา ต้องตอบ ฟา♯ (F♯)',
-    limit4:'ตรวจคำตอบจากชื่อตัวโน้ตเท่านั้น ไม่แยกอ็อกเทฟ และใช้โน้ตตัวดำเพียงรูปแบบเดียว',
+    limit1:'รองรับคีย์ซิกเนเจอร์สูงสุด 6 ชาร์ปหรือ 6 แฟลต พร้อมสุ่มเครื่องหมายชาร์ป แฟลต และเนเชอรัลในแต่ละข้อ',
+    limit2:'โน้ตแต่ละข้อสุ่มเครื่องหมาย ♯ ♭ หรือ ♮ และระบบแสดงเครื่องหมายยกเลิกคีย์ซิกเนเจอร์เมื่อจำเป็น',
+    limit3:'เลือกตอบได้ทั้งปุ่มชื่อโน้ต 21 แบบ หรือคีย์เปียโน 12 เสียง (รวมเสียง enharmonic)',
+    limit4:'เลือกฝึกกุญแจประจำหลักได้หลายแบบพร้อมกัน และระบบสุ่มตำแหน่งจากกุญแจที่เลือก',
     start:'เริ่มเกม', pause:'หยุดชั่วคราว', resume:'เล่นต่อ', restart:'เริ่มใหม่', menu:'เมนู',
     paused:'หยุดชั่วคราว', pausedHint:'โน้ตถูกซ่อนไว้ระหว่างหยุด',
     score:'คะแนน', misses:'พลาด', level:'ระดับ',
@@ -472,11 +508,11 @@ const I18N = {
     soundOn:'Sound: On', soundOff:'Sound: Off',
     tagline:'Read the note on the staff, then tap its name before it reaches the target line!',
     how1:'A five-line staff with one note falls from the top.',
-    how2:'Tap the correct note name, or press C D E F G A B / digits 1–7 on your keyboard (P or Esc = pause).',
+    how2:'Answer with note-name buttons or Piano keys. You can also press C D E F G A B / digits 1–7 (P or Esc = pause).',
     how3:() => `A wrong answer or a note reaching the line = 1 miss. ${CONFIG.maxMisses} misses and the game is over.`,
     settingsTitle:'Practice settings',
-    difficulty:'Difficulty', easy:'Easy', medium:'Medium', hard:'Hard',
-    clef:'Clef',
+    difficulty:'Difficulty', easy:'Easy', medium:'Medium', hard:'Hard', expert:'Expert', master:'Master',
+    clef:'Clefs (select multiple)', answerMode:'Answer method', noteButtons:'Note names', pianoKeys:'Piano keys',
     treble:'Treble clef', bass:'Bass clef', alto:'Alto clef', tenor:'Tenor clef',
     key:'Key signature',
     keyCount:(n) => n === 0 ? 'no accidentals' : (n > 0 ? `${n} sharp${n > 1 ? 's' : ''}` : `${-n} flat${n < -1 ? 's' : ''}`),
@@ -488,10 +524,10 @@ const I18N = {
     poolEmpty:'No notes match these settings — select more note names or change the range / position.',
     previewTitle:'Preview of the selected staff',
     limitsTitle:'Game limitations',
-    limit1:'Key signatures with up to 6 sharps or flats are supported (C♯ and C♭ major are not included).',
-    limit2:'Minor keys use the key signature of their relative major, and notes have no temporary accidentals (♯ ♭ ♮).',
-    limit3:'Answer buttons show note names as spelled in the chosen key, e.g. in G major the F position must be answered F♯.',
-    limit4:'Answers are checked by note name only (octave is ignored), and only one note shape (quarter note) is used.',
+    limit1:'Supports key signatures up to 6 sharps or flats, and randomly practices sharps, flats, and naturals.',
+    limit2:'Each note randomly receives ♯, ♭, or ♮, including natural signs that cancel a key-signature accidental.',
+    limit3:'Choose between 21 note-name buttons or a 12-pitch piano keyboard (including enharmonic pitches).',
+    limit4:'Select multiple clefs at once; notes are randomized across all selected clefs.',
     start:'Start game', pause:'Pause', resume:'Resume', restart:'Restart', menu:'Menu',
     paused:'Paused', pausedHint:'The note is hidden while paused.',
     score:'Score', misses:'Misses', level:'Level',
@@ -534,6 +570,8 @@ const settings = {
   lang: 'th',
   difficulty: 'easy',
   clef: 'treble',
+  clefs: ['treble'],
+  answerMode: 'names',
   keyN: 0,
   noteSet: 'all',                       // 'all' | 'custom'
   letters: new Set([0,1,2,3,4,5,6]),    // ใช้เมื่อ noteSet = 'custom'
@@ -547,19 +585,22 @@ const game = {
   cur: null,       // โน้ตที่กำลังเล่นอยู่ {pos, letter, progress, state, result, timer, pts}
   pool: [],
   score: 0, correct: 0, wrong: 0, missed: 0, misses: 0, streak: 0, bestStreak: 0,
-  lastPos: null
+  lastPos: null, lastClef: null
 };
 
 /** สร้างชุดตำแหน่งโน้ตที่จะสุ่มตามการตั้งค่า */
 function buildPool(){
   const [lo, hi] = RANGES[settings.range];
   const pool = [];
-  for (let p = lo; p <= hi; p++){
-    const isLine = (p % 2 === 0);
-    if (settings.positions === 'lines' && !isLine) continue;
-    if (settings.positions === 'spaces' && isLine) continue;
-    if (settings.noteSet === 'custom' && !settings.letters.has(letterAt(settings.clef, p))) continue;
-    pool.push(p);
+  const clefs = settings.clefs.length ? settings.clefs : ['treble'];
+  for (const clef of clefs){
+    for (let p = lo; p <= hi; p++){
+      const isLine = (p % 2 === 0);
+      if (settings.positions === 'lines' && !isLine) continue;
+      if (settings.positions === 'spaces' && isLine) continue;
+      if (settings.noteSet === 'custom' && !settings.letters.has(letterAt(clef, p))) continue;
+      pool.push({clef, pos:p});
+    }
   }
   return pool;
 }
@@ -597,6 +638,9 @@ function sharpSVG(x, y){
 function flatSVG(x, y){
   return `<path class="acc-thin" style="stroke-width:1.8" d="M ${x - 3},${y - 14} L ${x - 3},${y + 6} M ${x - 3},${y + 6} C ${x + 7},${y + 1} ${x + 7},${y - 8} ${x - 3},${y - 3}"/>`;
 }
+function naturalSVG(x,y){
+  return `<path class="acc-thin" style="stroke-width:1.8" d="M ${x-4},${y-10} L ${x-4},${y+7} L ${x+4},${y+3} L ${x+4},${y-7} L ${x+4},${y+10}"/>`;
+}
 
 function keySigSVG(clefId, n){
   if (n === 0) return '';
@@ -607,7 +651,7 @@ function keySigSVG(clefId, n){
   }).join('');
 }
 
-function noteSVG(pos){
+function noteSVG(pos, accidental=0, showAccidental=true, keyAcc=0){
   const x = STAFF.noteX, y = yOf(pos);
   let s = '';
   const ledger = yy => `<line class="ledger" x1="${x - 15}" y1="${yy}" x2="${x + 15}" y2="${yy}"/>`;
@@ -617,18 +661,20 @@ function noteSVG(pos){
   const sx = up ? x + 7.4 : x - 7.4;
   s += `<line class="note-stem" x1="${sx}" y1="${y}" x2="${sx}" y2="${up ? y - 27 : y + 27}"/>`;
   s += `<ellipse class="note-head" cx="${x}" cy="${y}" rx="8.6" ry="6.2" transform="rotate(-20 ${x} ${y})"/>`;
+  if (showAccidental && accidental !== 0) s += accidental > 0 ? sharpSVG(x-19,y) : flatSVG(x-19,y);
+  else if (showAccidental && keyAcc !== 0) s += naturalSVG(x-19,y);
   return s;
 }
 
 /** สร้าง SVG บรรทัดห้าเส้นทั้งหมด (pos = null คือไม่วาดโน้ต ใช้ในตัวอย่างหน้าเมนู) */
-function staffSVG(clefId, keyN, pos){
+function staffSVG(clefId, keyN, pos, accidental=0, showAccidental=false){
   let s = `<svg viewBox="0 0 ${STAFF.W} ${STAFF.H}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">`;
   for (let i = 0; i < 5; i++){
     s += `<line class="staff-line" x1="${STAFF.left}" y1="${yOf(i * 2)}" x2="${STAFF.right}" y2="${yOf(i * 2)}"/>`;
   }
   s += `<line class="bar-line" x1="${STAFF.left}" y1="${yOf(8)}" x2="${STAFF.left}" y2="${yOf(0)}"/>`;
   s += clefSVG(clefId) + keySigSVG(clefId, keyN);
-  if (pos !== null) s += noteSVG(pos);
+  if (pos !== null){ const l=letterAt(clefId,pos); const ka=keyAccidentals(keyN)[l]; s += noteSVG(pos, accidental, showAccidental, ka); }
   return s + '</svg>';
 }
 
@@ -690,10 +736,10 @@ const Sound = (() => {
    ===================================================== */
 const $ = id => document.getElementById(id);
 const els = {
-  menu: $('menu'), game: $('game'), over: $('over'),
+  intro: $('intro'), menu: $('menu'), game: $('game'), over: $('over'),
   langBtns: document.querySelectorAll('[data-lang]'),
   soundBtn: $('soundBtn'),
-  difficultySegs: $('difficultySegs'), clefSegs: $('clefSegs'), rangeSegs: $('rangeSegs'),
+  difficultySegs: $('difficultySegs'), clefSegs: $('clefSegs'), answerModeSegs: $('answerModeSegs'), rangeSegs: $('rangeSegs'),
   positionSegs: $('positionSegs'), noteSetSegs: $('noteSetSegs'),
   keySelect: $('keySelect'), letterGroup: $('letterGroup'), letterChips: $('letterChips'),
   poolInfo: $('poolInfo'), preview: $('preview'), startBtn: $('startBtn'),
@@ -721,6 +767,23 @@ function buildSegs(container, name, items, current, onChange){
     const span = document.createElement('span'); span.dataset.i18n = it.key;
     label.append(input, span);
     container.appendChild(label);
+  });
+}
+
+function buildMultiClefs(){
+  const items = [{value:'treble',key:'treble'},{value:'bass',key:'bass'},{value:'alto',key:'alto'},{value:'tenor',key:'tenor'}];
+  els.clefSegs.innerHTML = '';
+  items.forEach(it => {
+    const label=document.createElement('label'); label.className='chip';
+    const input=document.createElement('input'); input.type='checkbox'; input.checked=settings.clefs.includes(it.value);
+    input.addEventListener('change',()=>{
+      if(input.checked) settings.clefs.push(it.value);
+      else settings.clefs=settings.clefs.filter(x=>x!==it.value);
+      if(!settings.clefs.length){ settings.clefs=['treble']; input.checked=true; }
+      settings.clef=settings.clefs[0]; onSettingChanged();
+    });
+    const span=document.createElement('span'); span.dataset.i18n=it.key; span.textContent=t(it.key);
+    label.append(input,span); els.clefSegs.appendChild(label);
   });
 }
 
@@ -754,7 +817,7 @@ function renderLetterChips(){
 }
 
 function updatePreview(){
-  els.preview.innerHTML = staffSVG(settings.clef, settings.keyN, null);
+  els.preview.innerHTML = staffSVG(settings.clefs[0] || 'treble', settings.keyN, null);
 }
 
 function updatePoolInfo(){
@@ -772,11 +835,10 @@ function onSettingChanged(){
 
 function initSettingsUI(){
   buildSegs(els.difficultySegs, 'difficulty',
-    [{value:'easy',key:'easy'},{value:'medium',key:'medium'},{value:'hard',key:'hard'}],
+    [{value:'easy',key:'easy'},{value:'medium',key:'medium'},{value:'hard',key:'hard'},{value:'expert',key:'expert'},{value:'master',key:'master'}],
     settings.difficulty, v => { settings.difficulty = v; });
-  buildSegs(els.clefSegs, 'clef',
-    [{value:'treble',key:'treble'},{value:'bass',key:'bass'},{value:'alto',key:'alto'},{value:'tenor',key:'tenor'}],
-    settings.clef, v => { settings.clef = v; onSettingChanged(); });
+  buildMultiClefs();
+  buildSegs(els.answerModeSegs, 'answerMode', [{value:'names',key:'noteButtons'},{value:'piano',key:'pianoKeys'}], settings.answerMode, v => { settings.answerMode = v; buildPad(); });
   buildSegs(els.rangeSegs, 'range',
     [{value:'staff',key:'rangeStaff'},{value:'ledger1',key:'rangeL1'},{value:'ledger2',key:'rangeL2'}],
     settings.range, v => { settings.range = v; onSettingChanged(); });
@@ -798,7 +860,7 @@ function renderHud(){
   const lost = Math.min(game.misses, CONFIG.maxMisses);
   els.hudHearts.textContent = '♥'.repeat(CONFIG.maxMisses - lost) + '♡'.repeat(lost);
   els.hudLevel.textContent = t(settings.difficulty);
-  els.hudInfo.textContent = `${t(settings.clef)} · ${keyShort()}`;
+  els.hudInfo.textContent = `${settings.clefs.map(c=>t(c)).join(' + ')} · ${keyShort()}`;
 }
 
 function renderPauseBtn(){
@@ -817,18 +879,21 @@ function setPadEnabled(){
 
 /** สร้างปุ่มชื่อโน้ต 7 ปุ่ม ตามคีย์ที่เลือก */
 function buildPad(){
-  const acc = keyAccidentals(settings.keyN);
   els.pad.innerHTML = '';
-  for (let l = 0; l < 7; l++){
-    const b = document.createElement('button');
-    b.type = 'button'; b.className = 'note-btn'; b.dataset.letter = l;
-    const sym = ACC_SYM[acc[l]];
-    b.innerHTML = settings.lang === 'th'
-      ? `<span class="nb-main">${TH[l]}${sym}</span><span class="nb-sub">(${EN[l]}${sym})</span>`
-      : `<span class="nb-main">${EN[l]}${sym}</span>`;
-    b.setAttribute('aria-label', noteLabel(l, acc[l]));
-    b.addEventListener('click', () => answer(l));
-    els.pad.appendChild(b);
+  els.pad.classList.toggle('piano', settings.answerMode === 'piano');
+  if (settings.answerMode === 'piano'){
+    for(let pitch=0; pitch<12; pitch++){
+      const b=document.createElement('button'); b.type='button'; b.className='note-btn'+([1,3,6,8,10].includes(pitch)?' black-key':'');
+      b.dataset.pitch=pitch; const spellings=PITCH_NAMES[pitch].split('/'); b.innerHTML=`<span class="nb-main">${spellings[0]}</span>${spellings[1]?`<span class="nb-sub">${spellings[1]}</span>`:''}`;
+      b.setAttribute('aria-label', PITCH_NAMES[pitch]); b.addEventListener('click',()=>answerPitch(pitch)); els.pad.appendChild(b);
+    }
+  } else {
+    for(let l=0;l<7;l++) for(const acc of [-1,0,1]){
+      const b=document.createElement('button'); b.type='button'; b.className='note-btn'; b.dataset.letter=l; b.dataset.acc=acc;
+      const sym=ACC_SYM[acc];
+      b.innerHTML=settings.lang==='th'?`<span class="nb-main">${TH[l]}${sym}</span><span class="nb-sub">(${EN[l]}${sym})</span>`:`<span class="nb-main">${EN[l]}${sym}</span>`;
+      b.setAttribute('aria-label',noteLabel(l,acc)); b.addEventListener('click',()=>answerNote(l,acc)); els.pad.appendChild(b);
+    }
   }
   setPadEnabled();
 }
@@ -837,7 +902,7 @@ let lastFeedbackShown = false;
 function showFeedback(){
   const c = game.cur;
   if (!c || c.state !== 'resolved') return;
-  const name = noteLabel(c.letter, keyAccidentals(settings.keyN)[c.letter]);
+  const name = noteLabel(c.letter, c.accidental);
   let msg = '';
   if (c.result === 'correct') msg = t('fbCorrect', name, c.pts);
   else if (c.result === 'wrong') msg = t('fbWrong', name);
@@ -856,7 +921,7 @@ function renderOver(){
   const total = game.correct + game.wrong + game.missed;
   const acc = total ? Math.round(game.correct / total * 100) : 0;
   els.overScore.textContent = game.score;
-  els.overRecap.textContent = `${t(settings.clef)} · ${keyShort()} · ${t(settings.difficulty)}`;
+  els.overRecap.textContent = `${settings.clefs.map(c=>t(c)).join(' + ')} · ${keyShort()} · ${t(settings.difficulty)}`;
   const rows = [
     ['stCorrect', game.correct], ['stWrong', game.wrong], ['stMissed', game.missed],
     ['stAccuracy', acc + '%'], ['stStreak', game.bestStreak]
@@ -884,6 +949,7 @@ function renderAll(){
 }
 
 function showScreen(name){
+  els.intro.hidden = (name !== 'intro');
   els.menu.hidden = (name !== 'menu');
   els.game.hidden = (name !== 'game');
   els.over.hidden = (name !== 'over');
@@ -918,18 +984,19 @@ function draw(){
 }
 
 function spawnNote(){
-  const pool = game.pool;
-  let pos, tries = 0;
-  do {
-    pos = pool[Math.floor(Math.random() * pool.length)];
-    tries++;
-  } while (pool.length > 1 && pos === game.lastPos && tries < 30);
-  game.lastPos = pos;
-  game.cur = { pos, letter: letterAt(settings.clef, pos), progress: 0, state: 'falling', result: null, timer: 0, pts: 0 };
-  els.card.className = 'card';
-  els.card.innerHTML = staffSVG(settings.clef, settings.keyN, pos);
-  hideFeedback();
-  draw();
+  const pool=game.pool;
+  let item, tries=0;
+  do { item=pool[Math.floor(Math.random()*pool.length)]; tries++; }
+  while(pool.length>1 && item.clef===game.lastClef && item.pos===game.lastPos && tries<30);
+  game.lastPos=item.pos; game.lastClef=item.clef;
+  const letter=letterAt(item.clef,item.pos);
+  // Each note independently draws a natural, sharp, or flat, so all chromatic spellings are practiced.
+  const accidental=[-1,0,1][Math.floor(Math.random()*3)];
+  const pitch=((NATURAL_PITCH[letter]+accidental)%12+12)%12;
+  game.cur={pos:item.pos,clef:item.clef,letter,accidental,pitch,progress:0,state:'falling',result:null,timer:0,pts:0};
+  els.card.className='card';
+  els.card.innerHTML=staffSVG(item.clef,settings.keyN,item.pos,accidental,true);
+  hideFeedback(); draw();
 }
 
 function resolveNote(kind){
@@ -954,12 +1021,16 @@ function resolveNote(kind){
 }
 
 /** ผู้เล่นกดตอบ (ปุ่มหรือคีย์บอร์ด) — ตอบซ้ำหรือตอบตอนไม่ได้เล่นจะถูกละเว้น */
-function answer(letter){
-  if (game.phase !== 'playing') return;
-  const c = game.cur;
-  if (!c || c.state !== 'falling') return;
-  resolveNote(letter === c.letter ? 'correct' : 'wrong');
+function answerNote(letter, accidental){
+  const c=game.cur; if(game.phase!=='playing'||!c||c.state!=='falling') return;
+  resolveNote(letter===c.letter && accidental===c.accidental ? 'correct':'wrong');
 }
+function answerPitch(pitch){
+  const c=game.cur; if(game.phase!=='playing'||!c||c.state!=='falling') return;
+  resolveNote(pitch===c.pitch?'correct':'wrong');
+}
+// Legacy keyboard shortcuts answer by natural letter when using note-name mode.
+function answer(letter){ if(settings.answerMode==='piano') answerPitch(NATURAL_PITCH[letter]); else answerNote(letter,0); }
 
 function update(dt){
   const c = game.cur;
@@ -994,7 +1065,7 @@ function startGame(){
   if (!game.pool.length) return;
   Sound.unlock();
   cancelLoop(); Sound.stopAll();
-  Object.assign(game, { score:0, correct:0, wrong:0, missed:0, misses:0, streak:0, bestStreak:0, lastPos:null, cur:null });
+  Object.assign(game, { score:0, correct:0, wrong:0, missed:0, misses:0, streak:0, bestStreak:0, lastPos:null, lastClef:null, cur:null });
   showScreen('game');
   els.pauseOverlay.hidden = true;
   hideFeedback();
@@ -1043,6 +1114,7 @@ function goMenu(){
 /* =====================================================
    11) การผูกเหตุการณ์
    ===================================================== */
+$('enterBtn').addEventListener('click', () => showScreen('menu'));
 els.startBtn.addEventListener('click', startGame);
 els.againBtn.addEventListener('click', startGame);
 els.restartBtn.addEventListener('click', startGame);
@@ -1090,7 +1162,7 @@ window.addEventListener('orientationchange', onResize);
    ===================================================== */
 initSettingsUI();
 renderAll();
-showScreen('menu');
+showScreen('intro');
 })();
 </script>
 </body>
