@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>โน้ตตก – เกมฝึกอ่านโน้ตดนตรี</title>
+<style>
+/* =====================================================
+   ธีมและตัวแปรสี
+   ===================================================== */
+:root{
+  --ink:#1f2340;
+  --cream:#fff6dc;
+  --yellow:#ffd23f;
+  --coral:#ff6b6b;
+  --teal:#2fc4b2;
+  --purple:#5b3df5;
+  --green:#12894f;
+  --red:#c0182d;
+  --orange:#c75b00;
+  --zone:30px; /* ความสูงโซนเส้นเป้าหมาย */
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+  font-family:system-ui,-apple-system,"Segoe UI","Leelawadee UI","Thonburi","Noto Sans Thai",Tahoma,sans-serif;
+  line-height:1.5;
+  color:var(--ink);
+  background-color:var(--cream);
+  background-image:
+    radial-gradient(circle at 12% 18%,rgba(255,210,63,.45) 0 90px,transparent 91px),
+    radial-gradient(circle at 90% 85%,rgba(47,196,178,.30) 0 120px,transparent 121px),
+    radial-gradient(circle at 82% 10%,rgba(255,107,107,.25) 0 70px,transparent 71px);
+  background-attachment:fixed;
+  overflow:hidden;
+}
+[hidden]{display:none !important}
+button,select,input{font:inherit;color:var(--ink)}
+button{cursor:pointer}
+
+.app{
+  height:100vh;height:100dvh;
+  display:flex;flex-direction:column;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 14px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:1.2rem}
+.brand-note{display:grid;place-items:center;width:34px;height:34px;background:var(--coral);border:3px solid var(--ink);border-radius:50%}
+.top-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.lang-group{display:flex;gap:6px}
+main{flex:1;min-height:0;display:flex;flex-direction:column;padding:0 14px 14px}
+.screen{flex:1;min-height:0;overflow:auto}
+
+/* =====================================================
+   ปุ่ม
+   ===================================================== */
+.btn,.small-btn{
+  min-height:48px;padding:8px 18px;
+  border:3px solid var(--ink);border-radius:14px;
+  background:var(--yellow);font-weight:800;
+  box-shadow:3px 3px 0 var(--ink);
+  transition:transform .08s,box-shadow .08s,background .15s;
+}
+.small-btn{min-height:42px;padding:4px 12px;background:#fff;box-shadow:2px 2px 0 var(--ink)}
+.small-btn[aria-pressed="true"]{background:var(--yellow);text-decoration:underline}
+.btn:hover,.small-btn:hover{transform:translate(-1px,-1px);box-shadow:5px 5px 0 var(--ink);background:#ffe070}
+.btn:active,.small-btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.btn:disabled{opacity:.5;cursor:not-allowed;box-shadow:none;transform:none}
+.btn.big{min-height:56px;font-size:1.2rem;padding:10px 30px;background:var(--coral)}
+.btn.big:hover{background:#ff8585}
+.btn.alt{background:#fff}
+.btn:focus-visible,.small-btn:focus-visible,select:focus-visible,.note-btn:focus-visible{
+  outline:4px solid var(--purple);outline-offset:3px;
+}
+
+/* =====================================================
+   หน้าเมนู
+   ===================================================== */
+.menu{display:flex;flex-direction:column;gap:16px;max-width:980px;width:100%;margin:0 auto;padding:6px 6px 22px}
+.panel{background:#fff;border:3px solid var(--ink);border-radius:20px;box-shadow:6px 6px 0 var(--ink);padding:18px}
+.panel h1{margin:0 0 6px;font-size:clamp(2rem,6vw,3.2rem);line-height:1.15}
+.panel h2{margin:0 0 12px;font-size:1.3rem}
+.panel p{margin:0 0 8px;font-size:1.05rem}
+.howto{margin:8px 0 0;padding-left:1.3em}
+.settings-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
+fieldset{border:0;padding:0;margin:0;min-width:0}
+legend{font-weight:800;margin-bottom:6px;padding:0}
+.segs{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.seg,.chip{position:relative;display:block}
+.seg input,.chip input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.seg span,.chip span{
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  min-height:46px;padding:6px 12px;
+  border:3px solid var(--ink);border-radius:12px;background:#fff;font-weight:700;
+}
+.seg input:checked + span,.chip input:checked + span{background:var(--teal)}
+.seg input:checked + span::before,.chip input:checked + span::before{content:"✓ ";margin-right:4px}
+.seg input:focus-visible + span,.chip input:focus-visible + span{outline:4px solid var(--purple);outline-offset:2px}
+select{width:100%;min-height:48px;padding:8px 12px;border:3px solid var(--ink);border-radius:12px;background:#fff;font-weight:600}
+.status{margin:12px 0 0;font-weight:700}
+.status.warn{color:var(--red)}
+.preview{background:var(--cream);border:3px solid var(--ink);border-radius:14px;padding:8px;max-width:440px}
+.preview svg{display:block;width:100%;height:auto}
+.limits{margin:0;padding-left:1.3em}
+.limits li{margin-bottom:4px}
+.start-row{display:flex;justify-content:center}
+
+/* =====================================================
+   หน้าเกม
+   ===================================================== */
+.game{display:grid;grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr) auto;gap:10px;height:100%;max-width:1000px;width:100%;margin:0 auto;overflow:hidden}
+.hud{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.stat{display:flex;align-items:baseline;gap:6px;padding:4px 12px;background:#fff;border:3px solid var(--ink);border-radius:12px;font-weight:700}
+.stat strong{font-size:1.25rem}
+.hearts{color:var(--red);letter-spacing:2px}
+.hud-buttons{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+
+.field{
+  position:relative;overflow:hidden;min-height:0;
+  border:3px solid var(--ink);border-radius:18px;box-shadow:4px 4px 0 var(--ink);
+  background:
+    repeating-linear-gradient(to bottom,transparent 0 38px,rgba(31,35,64,.06) 38px 40px),
+    linear-gradient(#e6f3ff,#fffdf2);
+}
+.field:focus{outline:none}
+.card{
+  position:absolute;top:0;left:50%;
+  background:#fff;border:3px solid var(--ink);border-radius:14px;
+  box-shadow:3px 3px 0 var(--ink);
+  transform:translate(-50%,-400px);will-change:transform;
+}
+.card svg{display:block;width:100%;height:100%}
+.card.ok{border-color:var(--green)}
+.card.bad{border-color:var(--red);border-style:dashed}
+.card.miss{border-color:var(--orange);border-style:dotted}
+.card.ok svg{animation:pop .35s ease}
+.card.bad svg{animation:shake .4s ease}
+@keyframes pop{0%{transform:scale(1)}50%{transform:scale(1.08)}100%{transform:scale(1)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+
+.target-zone{
+  position:absolute;left:0;right:0;bottom:0;height:var(--zone);
+  border-top:4px dashed var(--coral);
+  background:repeating-linear-gradient(135deg,#ffd6d6 0 10px,#ffeeee 10px 20px);
+  display:flex;align-items:center;justify-content:center;
+  font-size:.8rem;font-weight:800;letter-spacing:.04em;
+}
+.feedback{
+  position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:3;
+  max-width:92%;padding:6px 14px;text-align:center;font-weight:800;
+  background:#fff;border:3px solid var(--ink);border-radius:999px;
+  opacity:0;pointer-events:none;transition:opacity .12s;
+}
+.feedback.show{opacity:1}
+.feedback.ok{background:#c9f7dc}
+.feedback.bad{background:#ffd3d6}
+.feedback.miss{background:#ffe3b8}
+.pause-overlay{
+  position:absolute;inset:0;z-index:5;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;
+  background:rgba(255,246,220,.97);padding:12px;
+}
+.pause-overlay h2{margin:0;font-size:1.8rem}
+.pause-overlay p{margin:0}
+.overlay-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+
+/* ปุ่มตอบชื่อโน้ต */
+.pad{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.note-btn{
+  flex:0 0 calc((100% - 24px)/4);
+  min-height:58px;padding:6px 4px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2;
+  border:3px solid var(--ink);border-radius:14px;box-shadow:3px 3px 0 var(--ink);
+  font-weight:800;transition:transform .08s,box-shadow .08s;
+}
+.note-btn .nb-main{font-size:1.3rem}
+.note-btn .nb-sub{font-size:.85rem;font-weight:700}
+.note-btn:hover{transform:translate(-1px,-1px);box-shadow:5px 5px 0 var(--ink)}
+.note-btn:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.note-btn:disabled{opacity:.5;cursor:not-allowed}
+.note-btn[data-letter="0"]{background:#ff9a9a}
+.note-btn[data-letter="1"]{background:#ffb454}
+.note-btn[data-letter="2"]{background:#ffe066}
+.note-btn[data-letter="3"]{background:#86e3a6}
+.note-btn[data-letter="4"]{background:#74d9e8}
+.note-btn[data-letter="5"]{background:#92b4ff}
+.note-btn[data-letter="6"]{background:#c4a8ff}
+@media (min-width:760px){ .note-btn{flex:1 1 0} }
+@media (orientation:landscape) and (max-height:520px){
+  .game{grid-template-columns:minmax(0,1fr) 250px;grid-template-rows:auto minmax(0,1fr)}
+  .hud{grid-column:1 / -1}
+  .field{grid-column:1;grid-row:2}
+  .pad{grid-column:2;grid-row:2;align-content:center}
+  .note-btn{flex:0 0 calc((100% - 8px)/2);min-height:46px}
+  .note-btn .nb-main{font-size:1.1rem}
+  .topbar{padding:4px 14px}
+  .stat{padding:2px 10px}
+}
+
+/* =====================================================
+   หน้าจบเกม
+   ===================================================== */
+.over{display:grid;place-items:center;padding:8px}
+.over .panel{max-width:560px;width:100%;text-align:center}
+.big-score{font-size:3.2rem;font-weight:900;line-height:1.1}
+.stats-list{margin:14px 0;text-align:left}
+.stat-row{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:2px dotted var(--ink)}
+.stat-row dt{margin:0}
+.stat-row dd{margin:0;font-weight:800}
+.over-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+
+/* =====================================================
+   องค์ประกอบ SVG ของบรรทัดโน้ต
+   ===================================================== */
+.staff-line{stroke:var(--ink);stroke-width:1.6}
+.bar-line{stroke:var(--ink);stroke-width:2.4}
+.ledger{stroke:var(--ink);stroke-width:2}
+.clef-stroke{fill:none;stroke:var(--ink);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.fill-ink{fill:var(--ink)}
+.acc-thin{stroke:var(--ink);stroke-width:1.3;fill:none;stroke-linecap:round}
+.acc-thick{stroke:var(--ink);stroke-width:2.8;fill:none}
+.note-head{fill:var(--ink)}
+.note-stem{stroke:var(--ink);stroke-width:2.2}
+
+/* เคารพการตั้งค่าลดการเคลื่อนไหว */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none !important;transition:none !important}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand"><span class="brand-note" aria-hidden="true">♪</span><span data-i18n="title"></span></div>
+    <div class="top-actions">
+      <div class="lang-group" role="group" data-i18n-aria="langLabel">
+        <button type="button" class="small-btn" data-lang="th" aria-pressed="true">ไทย</button>
+        <button type="button" class="small-btn" data-lang="en" aria-pressed="false">English</button>
+      </div>
+      <button type="button" class="small-btn" id="soundBtn" aria-pressed="true"></button>
+    </div>
+  </header>
+
+  <main>
+    <!-- ================= หน้าเริ่มเกม ================= -->
+    <section id="menu" class="screen menu">
+      <div class="panel">
+        <h1 data-i18n="title"></h1>
+        <p data-i18n="tagline"></p>
+        <ol class="howto">
+          <li data-i18n="how1"></li>
+          <li data-i18n="how2"></li>
+          <li data-i18n="how3"></li>
+        </ol>
+      </div>
+
+      <div class="panel">
+        <h2 data-i18n="settingsTitle"></h2>
+        <div class="settings-grid">
+          <fieldset><legend data-i18n="difficulty"></legend><div class="segs" id="difficultySegs"></div></fieldset>
+          <fieldset><legend data-i18n="clef"></legend><div class="segs" id="clefSegs"></div></fieldset>
+          <div>
+            <label for="keySelect" style="font-weight:800;display:block;margin-bottom:6px" data-i18n="key"></label>
+            <select id="keySelect"></select>
+          </div>
+          <fieldset><legend data-i18n="range"></legend><div class="segs" id="rangeSegs"></div></fieldset>
+          <fieldset><legend data-i18n="position"></legend><div class="segs" id="positionSegs"></div></fieldset>
+          <fieldset><legend data-i18n="noteSet"></legend><div class="segs" id="noteSetSegs"></div></fieldset>
+          <fieldset id="letterGroup" hidden><legend data-i18n="noteLetters"></legend><div class="chips" id="letterChips"></div></fieldset>
+        </div>
+        <p class="status" id="poolInfo" role="status"></p>
+      </div>
+
+      <div class="panel">
+        <h2 data-i18n="previewTitle"></h2>
+        <div class="preview" id="preview"></div>
+      </div>
+
+      <div class="panel">
+        <h2 data-i18n="limitsTitle"></h2>
+        <ul class="limits">
+          <li data-i18n="limit1"></li>
+          <li data-i18n="limit2"></li>
+          <li data-i18n="limit3"></li>
+          <li data-i18n="limit4"></li>
+        </ul>
+      </div>
+
+      <div class="start-row"><button type="button" class="btn big" id="startBtn" data-i18n="start"></button></div>
+    </section>
+
+    <!-- ================= หน้าเล่นเกม ================= -->
+    <section id="game" class="screen game" hidden>
+      <div class="hud">
+        <div class="stat"><span data-i18n="score"></span><strong id="hudScore">0</strong></div>
+        <div class="stat"><span data-i18n="misses"></span><strong id="hudMisses">0/3</strong><span class="hearts" id="hudHearts" aria-hidden="true"></span></div>
+        <div class="stat"><span data-i18n="level"></span><strong id="hudLevel"></strong></div>
+        <div class="stat"><span id="hudInfo"></span></div>
+        <div class="hud-buttons">
+          <button type="button" class="small-btn" id="pauseBtn"></button>
+          <button type="button" class="small-btn" id="restartBtn" data-i18n="restart"></button>
+          <button type="button" class="small-btn" id="menuBtn" data-i18n="menu"></button>
+        </div>
+      </div>
+
+      <div class="field" id="field" tabindex="-1">
+        <div class="card" id="card" role="img" data-i18n-aria="staffAria"></div>
+        <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
+        <div class="target-zone" id="zone"><span data-i18n="target"></span></div>
+        <div class="pause-overlay" id="pauseOverlay" hidden>
+          <h2 data-i18n="paused"></h2>
+          <p data-i18n="pausedHint"></p>
+          <div class="overlay-btns">
+            <button type="button" class="btn" id="resumeBtn" data-i18n="resume"></button>
+            <button type="button" class="btn alt" id="restartBtn2" data-i18n="restart"></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="pad" id="pad" role="group" data-i18n-aria="padLabel"></div>
+    </section>
+
+    <!-- ================= หน้าจบเกม ================= -->
+    <section id="over" class="screen over" hidden>
+      <div class="panel">
+        <h1 data-i18n="overTitle"></h1>
+        <div class="big-score" id="overScore">0</div>
+        <div data-i18n="score"></div>
+        <p id="overRecap" style="margin-top:8px"></p>
+        <dl class="stats-list" id="overStats"></dl>
+        <div class="over-btns">
+          <button type="button" class="btn big" id="againBtn" data-i18n="playAgain"></button>
+          <button type="button" class="btn alt" id="overMenuBtn" data-i18n="backToMenu"></button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+/* =====================================================
+   1) ค่าตั้งต้นของเกม (ปรับความเร็วแต่ละระดับได้ที่นี่)
+   ===================================================== */
+const CONFIG = {
+  maxMisses: 3,                 // พลาดได้กี่ครั้งก่อนจบเกม
+  difficulties: {               // fallSeconds = จำนวนวินาทีที่โน้ตใช้ตกจนถึงเส้นเป้าหมาย (น้อย = เร็ว)
+    easy:   { fallSeconds: 14 },
+    medium: { fallSeconds: 9 },
+    hard:   { fallSeconds: 5.5 }
+  },
+  scoreBase: 10,                // คะแนนพื้นฐานต่อข้อ
+  scoreSpeedBonus: 10,          // โบนัสสูงสุด ยิ่งตอบเร็วยิ่งได้มาก
+  feedbackMs: { correct: 650, wrong: 1400, miss: 1400 } // เวลาแสดงผลก่อนขึ้นโน้ตตัวถัดไป
+};
+
+/* =====================================================
+   2) ข้อมูลดนตรี
+   ลำดับตัวโน้ต (letter index): C=0 D=1 E=2 F=3 G=4 A=5 B=6
+   ตำแหน่งโน้ต (pos): 0 = เส้นล่างสุด, 1 = ช่องแรก, 2 = เส้นที่ 2 ... 8 = เส้นบนสุด
+   ค่าลบ/มากกว่า 8 = อยู่นอกบรรทัด (เส้นน้อย)
+   ===================================================== */
+const TH = ['โด','เร','มี','ฟา','ซอล','ลา','ที'];
+const EN = ['C','D','E','F','G','A','B'];
+const ACC_SYM = { '-1':'♭', '0':'', '1':'♯' };
+
+// bottomN = เลขลำดับ diatonic ของโน้ตบนเส้นล่างสุด (อ็อกเทฟ*7 + ตัวโน้ต) เช่น E4 = 4*7+2 = 30
+// sharps/flats = ตำแหน่งเครื่องหมายชาร์ป/แฟลตในกุญแจนั้น ๆ ตามธรรมเนียมการเขียนโน้ตสากล
+const TREBLE_SHARPS = [8,5,9,6,3,7,4];
+const TREBLE_FLATS  = [4,7,3,6,2,5,1];
+const shiftArr = (a, d) => a.map(p => p + d);
+const CLEFS = {
+  treble: { bottomN: 30, sharps: TREBLE_SHARPS,               flats: TREBLE_FLATS },               // เส้นล่าง = E4
+  alto:   { bottomN: 24, sharps: shiftArr(TREBLE_SHARPS,-1),  flats: shiftArr(TREBLE_FLATS,-1) },  // เส้นล่าง = F3
+  bass:   { bottomN: 18, sharps: shiftArr(TREBLE_SHARPS,-2),  flats: shiftArr(TREBLE_FLATS,-2) },  // เส้นล่าง = G2
+  tenor:  { bottomN: 22, sharps: [2,6,3,7,4,8,5],             flats: [5,8,4,7,3,6,2] }              // เส้นล่าง = D3
+};
+
+// n = จำนวนเครื่องหมาย (+ชาร์ป / -แฟลต), M = เมเจอร์ [ตัวโน้ต, เครื่องหมาย], m = ไมเนอร์คู่ขนาน
+const KEYS = [
+  { n: 0,  M:[0,0],  m:[5,0]  },
+  { n: 1,  M:[4,0],  m:[2,0]  },
+  { n: 2,  M:[1,0],  m:[6,0]  },
+  { n: 3,  M:[5,0],  m:[3,1]  },
+  { n: 4,  M:[2,0],  m:[0,1]  },
+  { n: 5,  M:[6,0],  m:[4,1]  },
+  { n: 6,  M:[3,1],  m:[1,1]  },
+  { n: -1, M:[3,0],  m:[1,0]  },
+  { n: -2, M:[6,-1], m:[4,0]  },
+  { n: -3, M:[2,-1], m:[0,0]  },
+  { n: -4, M:[5,-1], m:[3,0]  },
+  { n: -5, M:[1,-1], m:[6,-1] },
+  { n: -6, M:[4,-1], m:[2,-1] }
+];
+const SHARP_ORDER = [3,0,4,1,5,2,6]; // F C G D A E B
+const FLAT_ORDER  = [6,2,5,1,4,0,3]; // B E A D G C F
+
+// ช่วงตำแหน่งโน้ตที่ใช้ฝึก
+const RANGES = { staff:[0,8], ledger1:[-2,10], ledger2:[-4,12] };
+
+/** คืนค่าเครื่องหมายแปลงเสียงของแต่ละตัวโน้ตตามคีย์ (-1, 0, 1) */
+function keyAccidentals(n){
+  const acc = [0,0,0,0,0,0,0];
+  const order = n > 0 ? SHARP_ORDER : FLAT_ORDER;
+  for (let i = 0; i < Math.abs(n); i++) acc[order[i]] = n > 0 ? 1 : -1;
+  return acc;
+}
+
+/** ตัวโน้ต (0-6) ที่ตำแหน่ง pos ของกุญแจที่เลือก */
+function letterAt(clefId, pos){
+  const n = CLEFS[clefId].bottomN + pos;
+  return ((n % 7) + 7) % 7;
+}
+
+/** ชื่อโน้ตสำหรับแสดงผล เช่น "ฟา♯ (F♯)" หรือ "F♯" */
+function noteLabel(l, acc){
+  const s = ACC_SYM[acc];
+  return settings.lang === 'th' ? `${TH[l]}${s} (${EN[l]}${s})` : `${EN[l]}${s}`;
+}
+
+/* =====================================================
+   3) การแปลภาษา (ไทย / อังกฤษ)
+   ===================================================== */
+const I18N = {
+  th: {
+    docTitle:'โน้ตตก – เกมฝึกอ่านโน้ตดนตรี',
+    title:'โน้ตตก',
+    langLabel:'ภาษา',
+    soundOn:'เสียง: เปิด', soundOff:'เสียง: ปิด',
+    tagline:'อ่านโน้ตบนบรรทัดห้าเส้น แล้วกดชื่อโน้ตที่ถูกต้องก่อนที่โน้ตจะตกถึงเส้นเป้าหมาย!',
+    how1:'บรรทัดห้าเส้นที่มีโน้ตหนึ่งตัวจะตกลงมาจากด้านบน',
+    how2:'กดปุ่มชื่อโน้ตที่ถูกต้อง หรือกดแป้น C D E F G A B / เลข 1–7 บนคีย์บอร์ด (P หรือ Esc = หยุดชั่วคราว)',
+    how3:() => `ตอบผิดหรือปล่อยให้ตกถึงเส้น = พลาด 1 ครั้ง พลาดครบ ${CONFIG.maxMisses} ครั้งเกมจบ`,
+    settingsTitle:'ตั้งค่าการฝึก',
+    difficulty:'ระดับความยาก', easy:'ง่าย', medium:'ปานกลาง', hard:'ยาก',
+    clef:'กุญแจประจำหลัก',
+    treble:'กุญแจซอล (Treble)', bass:'กุญแจฟา (Bass)', alto:'กุญแจโด Alto', tenor:'กุญแจโด Tenor',
+    key:'คีย์เพลง (Key signature)',
+    keyCount:(n) => n === 0 ? 'ไม่มีเครื่องหมาย' : (n > 0 ? `ชาร์ป ${n} ตัว` : `แฟลต ${-n} ตัว`),
+    range:'ช่วงเสียง', rangeStaff:'ในบรรทัดห้าเส้น', rangeL1:'+ เส้นน้อย 1 เส้น', rangeL2:'+ เส้นน้อยสูงสุด 2 เส้น',
+    position:'ตำแหน่งโน้ต', posAny:'เส้นและช่อง', posLines:'เฉพาะบนเส้น', posSpaces:'เฉพาะในช่อง',
+    noteSet:'ชุดโน้ตที่ฝึก', allNotes:'ทุกโน้ต', customNotes:'เลือกชื่อโน้ตเอง',
+    noteLetters:'เลือกโน้ตที่ต้องการฝึก',
+    poolInfo:(n) => `ชุดฝึกปัจจุบัน: ${n} ตำแหน่งโน้ต`,
+    poolEmpty:'ไม่มีโน้ตตรงกับเงื่อนไขนี้ — ลองเลือกชื่อโน้ตเพิ่ม หรือเปลี่ยนช่วงเสียง/ตำแหน่งโน้ต',
+    previewTitle:'ตัวอย่างบรรทัดห้าเส้นตามที่เลือก',
+    limitsTitle:'ข้อจำกัดของเกม',
+    limit1:'รองรับคีย์ที่มีเครื่องหมายชาร์ปหรือแฟลตได้สูงสุด 6 ตัว (ยังไม่รองรับ C♯ และ C♭ เมเจอร์)',
+    limit2:'คีย์ไมเนอร์ใช้เครื่องหมายประจำคีย์เดียวกับเมเจอร์คู่ขนาน และไม่มีเครื่องหมายแปลงเสียงชั่วคราว (♯ ♭ ♮) ข้างตัวโน้ต',
+    limit3:'ปุ่มคำตอบแสดงชื่อโน้ตตามคีย์ที่เลือก เช่น ในคีย์ G เมเจอร์ ตำแหน่ง ฟา ต้องตอบ ฟา♯ (F♯)',
+    limit4:'ตรวจคำตอบจากชื่อตัวโน้ตเท่านั้น ไม่แยกอ็อกเทฟ และใช้โน้ตตัวดำเพียงรูปแบบเดียว',
+    start:'เริ่มเกม', pause:'หยุดชั่วคราว', resume:'เล่นต่อ', restart:'เริ่มใหม่', menu:'เมนู',
+    paused:'หยุดชั่วคราว', pausedHint:'โน้ตถูกซ่อนไว้ระหว่างหยุด',
+    score:'คะแนน', misses:'พลาด', level:'ระดับ',
+    target:'เส้นเป้าหมาย',
+    padLabel:'ปุ่มตอบชื่อโน้ต',
+    staffAria:'บรรทัดห้าเส้นที่มีโน้ตกำลังตกลงมา',
+    fbCorrect:(name, pts) => `✓ ถูกต้อง! ${name} +${pts}`,
+    fbWrong:(name) => `✗ ยังไม่ถูก — โน้ตนี้คือ ${name}`,
+    fbMiss:(name) => `⚠ โน้ตตกถึงเส้นแล้ว — คำตอบคือ ${name}`,
+    overTitle:'จบเกม',
+    stCorrect:'ตอบถูก', stWrong:'ตอบผิด', stMissed:'โน้ตตกถึงเส้น', stAccuracy:'ความแม่นยำ', stStreak:'ถูกติดต่อกันสูงสุด',
+    playAgain:'เล่นอีกครั้ง', backToMenu:'กลับไปตั้งค่า'
+  },
+  en: {
+    docTitle:'Falling Notes – Music Reading Game',
+    title:'Falling Notes',
+    langLabel:'Language',
+    soundOn:'Sound: On', soundOff:'Sound: Off',
+    tagline:'Read the note on the staff, then tap its name before it reaches the target line!',
+    how1:'A five-line staff with one note falls from the top.',
+    how2:'Tap the correct note name, or press C D E F G A B / digits 1–7 on your keyboard (P or Esc = pause).',
+    how3:() => `A wrong answer or a note reaching the line = 1 miss. ${CONFIG.maxMisses} misses and the game is over.`,
+    settingsTitle:'Practice settings',
+    difficulty:'Difficulty', easy:'Easy', medium:'Medium', hard:'Hard',
+    clef:'Clef',
+    treble:'Treble clef', bass:'Bass clef', alto:'Alto clef', tenor:'Tenor clef',
+    key:'Key signature',
+    keyCount:(n) => n === 0 ? 'no accidentals' : (n > 0 ? `${n} sharp${n > 1 ? 's' : ''}` : `${-n} flat${n < -1 ? 's' : ''}`),
+    range:'Range', rangeStaff:'Within the staff', rangeL1:'+ 1 ledger line', rangeL2:'+ up to 2 ledger lines',
+    position:'Note position', posAny:'Lines and spaces', posLines:'Lines only', posSpaces:'Spaces only',
+    noteSet:'Notes to practice', allNotes:'All notes', customNotes:'Choose note names',
+    noteLetters:'Choose the notes to practice',
+    poolInfo:(n) => `Current practice set: ${n} note position${n === 1 ? '' : 's'}`,
+    poolEmpty:'No notes match these settings — select more note names or change the range / position.',
+    previewTitle:'Preview of the selected staff',
+    limitsTitle:'Game limitations',
+    limit1:'Key signatures with up to 6 sharps or flats are supported (C♯ and C♭ major are not included).',
+    limit2:'Minor keys use the key signature of their relative major, and notes have no temporary accidentals (♯ ♭ ♮).',
+    limit3:'Answer buttons show note names as spelled in the chosen key, e.g. in G major the F position must be answered F♯.',
+    limit4:'Answers are checked by note name only (octave is ignored), and only one note shape (quarter note) is used.',
+    start:'Start game', pause:'Pause', resume:'Resume', restart:'Restart', menu:'Menu',
+    paused:'Paused', pausedHint:'The note is hidden while paused.',
+    score:'Score', misses:'Misses', level:'Level',
+    target:'Target line',
+    padLabel:'Note name answer buttons',
+    staffAria:'A five-line staff with a falling note',
+    fbCorrect:(name, pts) => `✓ Correct! ${name} +${pts}`,
+    fbWrong:(name) => `✗ Not quite — this note is ${name}`,
+    fbMiss:(name) => `⚠ Reached the line — the answer is ${name}`,
+    overTitle:'Game over',
+    stCorrect:'Correct', stWrong:'Wrong', stMissed:'Reached the line', stAccuracy:'Accuracy', stStreak:'Best streak',
+    playAgain:'Play again', backToMenu:'Back to settings'
+  }
+};
+
+function t(key, ...args){
+  const v = I18N[settings.lang][key];
+  if (typeof v === 'function') return v(...args);
+  return v === undefined ? key : v;
+}
+
+/** ข้อความอธิบายคีย์ เช่น "โด เมเจอร์ / ลา ไมเนอร์ (C / Am) · ไม่มีเครื่องหมาย" */
+function keyLabel(k){
+  const [ml, ma] = k.M, [nl, na] = k.m;
+  const count = t('keyCount', k.n);
+  if (settings.lang === 'th'){
+    return `${TH[ml]}${ACC_SYM[ma]} เมเจอร์ / ${TH[nl]}${ACC_SYM[na]} ไมเนอร์ (${EN[ml]}${ACC_SYM[ma]} / ${EN[nl]}${ACC_SYM[na]}m) · ${count}`;
+  }
+  return `${EN[ml]}${ACC_SYM[ma]} major / ${EN[nl]}${ACC_SYM[na]} minor · ${count}`;
+}
+function keyShort(){
+  const k = KEYS.find(x => x.n === settings.keyN);
+  return `${EN[k.M[0]]}${ACC_SYM[k.M[1]]} / ${EN[k.m[0]]}${ACC_SYM[k.m[1]]}m`;
+}
+
+/* =====================================================
+   4) การตั้งค่าและสถานะเกม
+   ===================================================== */
+const settings = {
+  lang: 'th',
+  difficulty: 'easy',
+  clef: 'treble',
+  keyN: 0,
+  noteSet: 'all',                       // 'all' | 'custom'
+  letters: new Set([0,1,2,3,4,5,6]),    // ใช้เมื่อ noteSet = 'custom'
+  range: 'staff',
+  positions: 'any',                     // 'any' | 'lines' | 'spaces'
+  sound: true
+};
+
+const game = {
+  phase: 'menu',   // 'menu' | 'playing' | 'paused' | 'over'
+  cur: null,       // โน้ตที่กำลังเล่นอยู่ {pos, letter, progress, state, result, timer, pts}
+  pool: [],
+  score: 0, correct: 0, wrong: 0, missed: 0, misses: 0, streak: 0, bestStreak: 0,
+  lastPos: null
+};
+
+/** สร้างชุดตำแหน่งโน้ตที่จะสุ่มตามการตั้งค่า */
+function buildPool(){
+  const [lo, hi] = RANGES[settings.range];
+  const pool = [];
+  for (let p = lo; p <= hi; p++){
+    const isLine = (p % 2 === 0);
+    if (settings.positions === 'lines' && !isLine) continue;
+    if (settings.positions === 'spaces' && isLine) continue;
+    if (settings.noteSet === 'custom' && !settings.letters.has(letterAt(settings.clef, p))) continue;
+    pool.push(p);
+  }
+  return pool;
+}
+
+/* =====================================================
+   5) การวาดบรรทัดโน้ตด้วย SVG
+   ===================================================== */
+const STAFF = { W:340, H:160, left:6, right:334, bottomY:118, half:7, noteX:232, keyX:66, keyStep:12 };
+const yOf = p => STAFF.bottomY - p * STAFF.half;
+
+function clefSVG(id){
+  const x = 30;
+  if (id === 'treble'){
+    return `<g transform="translate(${x} ${yOf(2)})"><path class="clef-stroke" d="M -6,28 C -5,34 2,34 2,25 L 2.2,-33 C 2.5,-45 6,-52 9,-49 C 13,-46 11,-35 3,-24 C -6,-12 -12,-2 -10,6 C -8,15 3,17 9,10 C 14,3 9,-8 1,-8 C -5,-8 -6,0 -3,4 C 0,7 5,5 4,0"/></g>`;
+  }
+  if (id === 'bass'){
+    return `<g transform="translate(${x - 4} ${yOf(6)})">
+      <circle class="fill-ink" cx="-3" cy="0" r="4.6"/>
+      <path class="clef-stroke" d="M -5,-4 C 3,-9 12,-4 11,6 C 10,18 -2,30 -14,38"/>
+      <circle class="fill-ink" cx="17" cy="-7" r="2.3"/><circle class="fill-ink" cx="17" cy="7" r="2.3"/></g>`;
+  }
+  // กุญแจโด (Alto = เส้นกลางที่ 3, Tenor = เส้นที่ 4 นับจากล่าง)
+  const c = id === 'alto' ? 4 : 6;
+  const top = yOf(8) - yOf(c), bot = yOf(0) - yOf(c);
+  return `<g transform="translate(${x} ${yOf(c)})">
+    <rect class="fill-ink" x="-10" y="${top}" width="5" height="${bot - top}"/>
+    <rect class="fill-ink" x="-2" y="${top}" width="1.8" height="${bot - top}"/>
+    <path class="clef-stroke" d="M 3,${top + 1} C 17,${top + 1} 17,-2 5,-1 M 3,${bot - 1} C 17,${bot - 1} 17,2 5,1"/></g>`;
+}
+
+function sharpSVG(x, y){
+  return `<path class="acc-thin" d="M ${x - 2.5},${y - 9} L ${x - 2.5},${y + 10} M ${x + 2.5},${y - 10} L ${x + 2.5},${y + 9}"/>
+          <path class="acc-thick" d="M ${x - 6},${y - 2} L ${x + 6},${y - 5} M ${x - 6},${y + 5} L ${x + 6},${y + 2}"/>`;
+}
+function flatSVG(x, y){
+  return `<path class="acc-thin" style="stroke-width:1.8" d="M ${x - 3},${y - 14} L ${x - 3},${y + 6} M ${x - 3},${y + 6} C ${x + 7},${y + 1} ${x + 7},${y - 8} ${x - 3},${y - 3}"/>`;
+}
+
+function keySigSVG(clefId, n){
+  if (n === 0) return '';
+  const arr = (n > 0 ? CLEFS[clefId].sharps : CLEFS[clefId].flats).slice(0, Math.abs(n));
+  return arr.map((pos, i) => {
+    const x = STAFF.keyX + i * STAFF.keyStep, y = yOf(pos);
+    return n > 0 ? sharpSVG(x, y) : flatSVG(x, y);
+  }).join('');
+}
+
+function noteSVG(pos){
+  const x = STAFF.noteX, y = yOf(pos);
+  let s = '';
+  const ledger = yy => `<line class="ledger" x1="${x - 15}" y1="${yy}" x2="${x + 15}" y2="${yy}"/>`;
+  if (pos <= -2) for (let p = -2; p >= pos; p -= 2) s += ledger(yOf(p));
+  if (pos >= 10) for (let p = 10; p <= pos; p += 2) s += ledger(yOf(p));
+  const up = pos < 4;                         // ก้านชี้ขึ้นถ้าต่ำกว่าเส้นกลาง
+  const sx = up ? x + 7.4 : x - 7.4;
+  s += `<line class="note-stem" x1="${sx}" y1="${y}" x2="${sx}" y2="${up ? y - 27 : y + 27}"/>`;
+  s += `<ellipse class="note-head" cx="${x}" cy="${y}" rx="8.6" ry="6.2" transform="rotate(-20 ${x} ${y})"/>`;
+  return s;
+}
+
+/** สร้าง SVG บรรทัดห้าเส้นทั้งหมด (pos = null คือไม่วาดโน้ต ใช้ในตัวอย่างหน้าเมนู) */
+function staffSVG(clefId, keyN, pos){
+  let s = `<svg viewBox="0 0 ${STAFF.W} ${STAFF.H}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">`;
+  for (let i = 0; i < 5; i++){
+    s += `<line class="staff-line" x1="${STAFF.left}" y1="${yOf(i * 2)}" x2="${STAFF.right}" y2="${yOf(i * 2)}"/>`;
+  }
+  s += `<line class="bar-line" x1="${STAFF.left}" y1="${yOf(8)}" x2="${STAFF.left}" y2="${yOf(0)}"/>`;
+  s += clefSVG(clefId) + keySigSVG(clefId, keyN);
+  if (pos !== null) s += noteSVG(pos);
+  return s + '</svg>';
+}
+
+/* =====================================================
+   6) เสียง (Web Audio API)
+   ===================================================== */
+const Sound = (() => {
+  let ctx = null, master = null;
+  const active = new Set();
+
+  /** สร้าง/ปลุก AudioContext — ต้องเรียกจากการกดของผู้เล่นเท่านั้น */
+  function unlock(){
+    try {
+      if (!ctx){
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return false;
+        ctx = new AC();
+        master = ctx.createGain();
+        master.gain.value = 0.5;
+        master.connect(ctx.destination);
+      }
+      if (ctx.state === 'suspended') ctx.resume();
+      return true;
+    } catch (e){ return false; }
+  }
+  function tone(freq, start, dur, type, vol){
+    const t0 = ctx.currentTime + start;
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(vol, t0 + 0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(master);
+    o.start(t0); o.stop(t0 + dur + 0.03);
+    active.add(o);
+    o.onended = () => { active.delete(o); try { g.disconnect(); } catch (e){} };
+  }
+  function play(name){
+    if (!settings.sound || !ctx) return;
+    switch (name){
+      case 'blip':    tone(660, 0, .09, 'triangle', .2); break;
+      case 'correct': tone(660, 0, .12, 'triangle', .25); tone(880, .10, .2, 'triangle', .25); break;
+      case 'wrong':   tone(220, 0, .18, 'square', .13); tone(165, .14, .28, 'square', .13); break;
+      case 'miss':    tone(300, 0, .2, 'sawtooth', .12); tone(200, .16, .3, 'sawtooth', .12); break;
+      case 'over':    tone(392, 0, .2, 'triangle', .25); tone(330, .2, .2, 'triangle', .25);
+                      tone(262, .4, .2, 'triangle', .25); tone(196, .6, .5, 'triangle', .25); break;
+    }
+  }
+  /** หยุดเสียงที่ยังเล่นอยู่ทั้งหมด */
+  function stopAll(){
+    active.forEach(o => { try { o.stop(); } catch (e){} });
+    active.clear();
+  }
+  return { unlock, play, stopAll };
+})();
+
+/* =====================================================
+   7) อ้างอิงองค์ประกอบหน้าเว็บ
+   ===================================================== */
+const $ = id => document.getElementById(id);
+const els = {
+  menu: $('menu'), game: $('game'), over: $('over'),
+  langBtns: document.querySelectorAll('[data-lang]'),
+  soundBtn: $('soundBtn'),
+  difficultySegs: $('difficultySegs'), clefSegs: $('clefSegs'), rangeSegs: $('rangeSegs'),
+  positionSegs: $('positionSegs'), noteSetSegs: $('noteSetSegs'),
+  keySelect: $('keySelect'), letterGroup: $('letterGroup'), letterChips: $('letterChips'),
+  poolInfo: $('poolInfo'), preview: $('preview'), startBtn: $('startBtn'),
+  hudScore: $('hudScore'), hudMisses: $('hudMisses'), hudHearts: $('hudHearts'),
+  hudLevel: $('hudLevel'), hudInfo: $('hudInfo'),
+  pauseBtn: $('pauseBtn'), restartBtn: $('restartBtn'), menuBtn: $('menuBtn'),
+  field: $('field'), card: $('card'), zone: $('zone'), feedback: $('feedback'),
+  pauseOverlay: $('pauseOverlay'), resumeBtn: $('resumeBtn'), restartBtn2: $('restartBtn2'),
+  pad: $('pad'),
+  overScore: $('overScore'), overRecap: $('overRecap'), overStats: $('overStats'),
+  againBtn: $('againBtn'), overMenuBtn: $('overMenuBtn')
+};
+
+/* =====================================================
+   8) เมนูตั้งค่า
+   ===================================================== */
+/** สร้างกลุ่มปุ่มเลือก (radio) */
+function buildSegs(container, name, items, current, onChange){
+  container.innerHTML = '';
+  items.forEach(it => {
+    const label = document.createElement('label'); label.className = 'seg';
+    const input = document.createElement('input');
+    input.type = 'radio'; input.name = name; input.value = it.value; input.checked = (it.value === current);
+    input.addEventListener('change', () => { if (input.checked) onChange(it.value); });
+    const span = document.createElement('span'); span.dataset.i18n = it.key;
+    label.append(input, span);
+    container.appendChild(label);
+  });
+}
+
+function renderKeyOptions(){
+  const cur = String(settings.keyN);
+  els.keySelect.innerHTML = '';
+  KEYS.forEach(k => {
+    const o = document.createElement('option');
+    o.value = String(k.n); o.textContent = keyLabel(k);
+    els.keySelect.appendChild(o);
+  });
+  els.keySelect.value = cur;
+}
+
+function renderLetterChips(){
+  const acc = keyAccidentals(settings.keyN);
+  els.letterChips.innerHTML = '';
+  for (let l = 0; l < 7; l++){
+    const label = document.createElement('label'); label.className = 'chip';
+    const input = document.createElement('input');
+    input.type = 'checkbox'; input.checked = settings.letters.has(l);
+    input.addEventListener('change', () => {
+      if (input.checked) settings.letters.add(l); else settings.letters.delete(l);
+      updatePoolInfo();
+    });
+    const span = document.createElement('span'); span.textContent = noteLabel(l, acc[l]);
+    label.append(input, span);
+    els.letterChips.appendChild(label);
+  }
+  els.letterGroup.hidden = (settings.noteSet !== 'custom');
+}
+
+function updatePreview(){
+  els.preview.innerHTML = staffSVG(settings.clef, settings.keyN, null);
+}
+
+function updatePoolInfo(){
+  const n = buildPool().length;
+  els.poolInfo.textContent = n ? t('poolInfo', n) : t('poolEmpty');
+  els.poolInfo.classList.toggle('warn', n === 0);
+  els.startBtn.disabled = (n === 0);
+}
+
+function onSettingChanged(){
+  renderLetterChips();
+  updatePreview();
+  updatePoolInfo();
+}
+
+function initSettingsUI(){
+  buildSegs(els.difficultySegs, 'difficulty',
+    [{value:'easy',key:'easy'},{value:'medium',key:'medium'},{value:'hard',key:'hard'}],
+    settings.difficulty, v => { settings.difficulty = v; });
+  buildSegs(els.clefSegs, 'clef',
+    [{value:'treble',key:'treble'},{value:'bass',key:'bass'},{value:'alto',key:'alto'},{value:'tenor',key:'tenor'}],
+    settings.clef, v => { settings.clef = v; onSettingChanged(); });
+  buildSegs(els.rangeSegs, 'range',
+    [{value:'staff',key:'rangeStaff'},{value:'ledger1',key:'rangeL1'},{value:'ledger2',key:'rangeL2'}],
+    settings.range, v => { settings.range = v; onSettingChanged(); });
+  buildSegs(els.positionSegs, 'position',
+    [{value:'any',key:'posAny'},{value:'lines',key:'posLines'},{value:'spaces',key:'posSpaces'}],
+    settings.positions, v => { settings.positions = v; onSettingChanged(); });
+  buildSegs(els.noteSetSegs, 'noteSet',
+    [{value:'all',key:'allNotes'},{value:'custom',key:'customNotes'}],
+    settings.noteSet, v => { settings.noteSet = v; onSettingChanged(); });
+  els.keySelect.addEventListener('change', () => { settings.keyN = Number(els.keySelect.value); onSettingChanged(); });
+}
+
+/* =====================================================
+   9) ส่วนแสดงผลทั่วไป (HUD, ปุ่มตอบ, ภาษา)
+   ===================================================== */
+function renderHud(){
+  els.hudScore.textContent = game.score;
+  els.hudMisses.textContent = `${game.misses}/${CONFIG.maxMisses}`;
+  const lost = Math.min(game.misses, CONFIG.maxMisses);
+  els.hudHearts.textContent = '♥'.repeat(CONFIG.maxMisses - lost) + '♡'.repeat(lost);
+  els.hudLevel.textContent = t(settings.difficulty);
+  els.hudInfo.textContent = `${t(settings.clef)} · ${keyShort()}`;
+}
+
+function renderPauseBtn(){
+  els.pauseBtn.textContent = game.phase === 'paused' ? t('resume') : t('pause');
+}
+
+function renderSoundBtn(){
+  els.soundBtn.textContent = settings.sound ? t('soundOn') : t('soundOff');
+  els.soundBtn.setAttribute('aria-pressed', String(settings.sound));
+}
+
+function setPadEnabled(){
+  const on = (game.phase === 'playing');
+  els.pad.querySelectorAll('button').forEach(b => { b.disabled = !on; });
+}
+
+/** สร้างปุ่มชื่อโน้ต 7 ปุ่ม ตามคีย์ที่เลือก */
+function buildPad(){
+  const acc = keyAccidentals(settings.keyN);
+  els.pad.innerHTML = '';
+  for (let l = 0; l < 7; l++){
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'note-btn'; b.dataset.letter = l;
+    const sym = ACC_SYM[acc[l]];
+    b.innerHTML = settings.lang === 'th'
+      ? `<span class="nb-main">${TH[l]}${sym}</span><span class="nb-sub">(${EN[l]}${sym})</span>`
+      : `<span class="nb-main">${EN[l]}${sym}</span>`;
+    b.setAttribute('aria-label', noteLabel(l, acc[l]));
+    b.addEventListener('click', () => answer(l));
+    els.pad.appendChild(b);
+  }
+  setPadEnabled();
+}
+
+let lastFeedbackShown = false;
+function showFeedback(){
+  const c = game.cur;
+  if (!c || c.state !== 'resolved') return;
+  const name = noteLabel(c.letter, keyAccidentals(settings.keyN)[c.letter]);
+  let msg = '';
+  if (c.result === 'correct') msg = t('fbCorrect', name, c.pts);
+  else if (c.result === 'wrong') msg = t('fbWrong', name);
+  else msg = t('fbMiss', name);
+  els.feedback.textContent = msg;
+  els.feedback.className = 'feedback show ' + (c.result === 'correct' ? 'ok' : c.result === 'wrong' ? 'bad' : 'miss');
+  lastFeedbackShown = true;
+}
+function hideFeedback(){
+  els.feedback.className = 'feedback';
+  els.feedback.textContent = '';
+  lastFeedbackShown = false;
+}
+
+function renderOver(){
+  const total = game.correct + game.wrong + game.missed;
+  const acc = total ? Math.round(game.correct / total * 100) : 0;
+  els.overScore.textContent = game.score;
+  els.overRecap.textContent = `${t(settings.clef)} · ${keyShort()} · ${t(settings.difficulty)}`;
+  const rows = [
+    ['stCorrect', game.correct], ['stWrong', game.wrong], ['stMissed', game.missed],
+    ['stAccuracy', acc + '%'], ['stStreak', game.bestStreak]
+  ];
+  els.overStats.innerHTML = rows.map(r => `<div class="stat-row"><dt>${t(r[0])}</dt><dd>${r[1]}</dd></div>`).join('');
+}
+
+/** อัปเดตข้อความทั้งหมดตามภาษาปัจจุบัน (ไม่ต้องโหลดหน้าใหม่) */
+function renderAll(){
+  document.documentElement.lang = settings.lang;
+  document.title = t('docTitle');
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
+  els.langBtns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.lang === settings.lang)));
+  renderSoundBtn();
+  renderKeyOptions();
+  renderLetterChips();
+  updatePreview();
+  updatePoolInfo();
+  buildPad();
+  renderHud();
+  renderPauseBtn();
+  if (lastFeedbackShown) showFeedback();
+  if (game.phase === 'over') renderOver();
+}
+
+function showScreen(name){
+  els.menu.hidden = (name !== 'menu');
+  els.game.hidden = (name !== 'game');
+  els.over.hidden = (name !== 'over');
+}
+
+/* =====================================================
+   10) ระบบเกม
+   ===================================================== */
+let rafId = null, lastTs = null, metrics = null;
+
+/** คำนวณขนาดการ์ดบรรทัดโน้ตและตำแหน่งเส้นเป้าหมายตามขนาดหน้าจอ */
+function measure(){
+  const fw = els.field.clientWidth, fh = els.field.clientHeight;
+  if (!fw || !fh) return;
+  const ratio = STAFF.W / STAFF.H;
+  let cw = Math.min(fw * 0.94, 440);
+  let ch = cw / ratio;
+  const maxH = fh * 0.62;
+  if (ch > maxH){ ch = maxH; cw = ch * ratio; }
+  metrics = { fw, fh, cw, ch, targetY: fh - els.zone.offsetHeight };
+  els.card.style.width = cw + 'px';
+  els.card.style.height = ch + 'px';
+}
+
+/** ตำแหน่งแนวตั้งของการ์ด: progress 0 = ซ่อนอยู่เหนือจอ, 1 = ขอบล่างแตะเส้นเป้าหมาย */
+function cardY(p){ return -metrics.ch + p * (metrics.targetY + metrics.ch); }
+
+function draw(){
+  const c = game.cur;
+  if (!c || !metrics) return;
+  els.card.style.transform = `translate(-50%, ${cardY(c.progress)}px)`;
+}
+
+function spawnNote(){
+  const pool = game.pool;
+  let pos, tries = 0;
+  do {
+    pos = pool[Math.floor(Math.random() * pool.length)];
+    tries++;
+  } while (pool.length > 1 && pos === game.lastPos && tries < 30);
+  game.lastPos = pos;
+  game.cur = { pos, letter: letterAt(settings.clef, pos), progress: 0, state: 'falling', result: null, timer: 0, pts: 0 };
+  els.card.className = 'card';
+  els.card.innerHTML = staffSVG(settings.clef, settings.keyN, pos);
+  hideFeedback();
+  draw();
+}
+
+function resolveNote(kind){
+  const c = game.cur;
+  if (!c || c.state !== 'falling') return;
+  c.state = 'resolved';
+  c.result = kind;
+  if (kind === 'correct'){
+    c.pts = CONFIG.scoreBase + Math.round(CONFIG.scoreSpeedBonus * (1 - c.progress));
+    game.score += c.pts; game.correct++; game.streak++;
+    game.bestStreak = Math.max(game.bestStreak, game.streak);
+    Sound.play('correct');
+  } else {
+    if (kind === 'wrong') game.wrong++; else game.missed++;
+    game.misses++; game.streak = 0;
+    Sound.play(kind);
+  }
+  c.timer = CONFIG.feedbackMs[kind];
+  els.card.classList.add(kind === 'correct' ? 'ok' : kind === 'wrong' ? 'bad' : 'miss');
+  showFeedback();
+  renderHud();
+}
+
+/** ผู้เล่นกดตอบ (ปุ่มหรือคีย์บอร์ด) — ตอบซ้ำหรือตอบตอนไม่ได้เล่นจะถูกละเว้น */
+function answer(letter){
+  if (game.phase !== 'playing') return;
+  const c = game.cur;
+  if (!c || c.state !== 'falling') return;
+  resolveNote(letter === c.letter ? 'correct' : 'wrong');
+}
+
+function update(dt){
+  const c = game.cur;
+  if (!c) return;
+  if (c.state === 'falling'){
+    c.progress += dt / CONFIG.difficulties[settings.difficulty].fallSeconds;
+    if (c.progress >= 1){ c.progress = 1; resolveNote('miss'); }
+  } else {
+    c.timer -= dt * 1000;
+    if (c.timer <= 0){
+      if (game.misses >= CONFIG.maxMisses) endGame(); else spawnNote();
+    }
+  }
+}
+
+function frame(ts){
+  rafId = null;
+  if (game.phase !== 'playing') return;
+  if (lastTs === null) lastTs = ts;
+  const dt = Math.min((ts - lastTs) / 1000, 0.05); // กันกระโดดเมื่อแท็บค้าง
+  lastTs = ts;
+  update(dt);
+  if (game.phase !== 'playing') return;
+  draw();
+  rafId = requestAnimationFrame(frame);
+}
+function startLoop(){ cancelLoop(); lastTs = null; rafId = requestAnimationFrame(frame); }
+function cancelLoop(){ if (rafId !== null){ cancelAnimationFrame(rafId); rafId = null; } }
+
+function startGame(){
+  game.pool = buildPool();
+  if (!game.pool.length) return;
+  Sound.unlock();
+  cancelLoop(); Sound.stopAll();
+  Object.assign(game, { score:0, correct:0, wrong:0, missed:0, misses:0, streak:0, bestStreak:0, lastPos:null, cur:null });
+  showScreen('game');
+  els.pauseOverlay.hidden = true;
+  hideFeedback();
+  game.phase = 'playing';
+  buildPad(); measure(); renderHud(); renderPauseBtn();
+  spawnNote();
+  startLoop();
+  els.field.focus({ preventScroll: true });
+}
+
+function pauseGame(){
+  if (game.phase !== 'playing') return;
+  game.phase = 'paused';
+  cancelLoop(); Sound.stopAll();
+  els.pauseOverlay.hidden = false;
+  setPadEnabled(); renderPauseBtn();
+  els.resumeBtn.focus();
+}
+function resumeGame(){
+  if (game.phase !== 'paused') return;
+  game.phase = 'playing';
+  els.pauseOverlay.hidden = true;
+  setPadEnabled(); renderPauseBtn();
+  startLoop();
+  els.field.focus({ preventScroll: true });
+}
+function togglePause(){ game.phase === 'playing' ? pauseGame() : resumeGame(); }
+
+function endGame(){
+  game.phase = 'over';
+  cancelLoop(); Sound.stopAll();
+  Sound.play('over');
+  renderOver();
+  showScreen('over');
+  els.againBtn.focus();
+}
+
+function goMenu(){
+  cancelLoop(); Sound.stopAll();
+  game.phase = 'menu';
+  els.pauseOverlay.hidden = true;
+  showScreen('menu');
+  updatePoolInfo();
+}
+
+/* =====================================================
+   11) การผูกเหตุการณ์
+   ===================================================== */
+els.startBtn.addEventListener('click', startGame);
+els.againBtn.addEventListener('click', startGame);
+els.restartBtn.addEventListener('click', startGame);
+els.restartBtn2.addEventListener('click', startGame);
+els.pauseBtn.addEventListener('click', togglePause);
+els.resumeBtn.addEventListener('click', resumeGame);
+els.menuBtn.addEventListener('click', goMenu);
+els.overMenuBtn.addEventListener('click', goMenu);
+
+els.langBtns.forEach(b => b.addEventListener('click', () => {
+  settings.lang = b.dataset.lang;
+  renderAll();
+}));
+
+els.soundBtn.addEventListener('click', () => {
+  settings.sound = !settings.sound;
+  if (settings.sound){ Sound.unlock(); Sound.play('blip'); } else { Sound.stopAll(); }
+  renderSoundBtn();
+});
+
+// คีย์บอร์ด: C D E F G A B หรือ 1-7 เพื่อตอบ, P / Esc เพื่อหยุดชั่วคราว (ใช้ e.code จึงทำงานได้แม้เปิดแป้นภาษาไทย)
+const CODE_TO_LETTER = { KeyC:0, KeyD:1, KeyE:2, KeyF:3, KeyG:4, KeyA:5, KeyB:6 };
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
+  if (game.phase === 'playing' || game.phase === 'paused'){
+    if (e.code === 'Escape' || e.code === 'KeyP'){ e.preventDefault(); togglePause(); return; }
+  }
+  if (game.phase !== 'playing') return;
+  if (e.code in CODE_TO_LETTER){ answer(CODE_TO_LETTER[e.code]); return; }
+  const m = /^(?:Digit|Numpad)([1-7])$/.exec(e.code);
+  if (m) answer(Number(m[1]) - 1);
+});
+
+// หยุดเกมอัตโนมัติเมื่อสลับแท็บ/ปิดหน้าจอ
+document.addEventListener('visibilitychange', () => { if (document.hidden) pauseGame(); });
+
+// ปรับขนาดการ์ดเมื่อหน้าจอเปลี่ยน (หมุนจอ/ย่อขยาย)
+function onResize(){ measure(); draw(); }
+if ('ResizeObserver' in window) new ResizeObserver(onResize).observe(els.field);
+window.addEventListener('resize', onResize);
+window.addEventListener('orientationchange', onResize);
+
+/* =====================================================
+   12) เริ่มต้นระบบ
+   ===================================================== */
+initSettingsUI();
+renderAll();
+showScreen('menu');
+})();
+</script>
+</body>
+</html>
